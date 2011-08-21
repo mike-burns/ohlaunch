@@ -4,7 +4,9 @@ import android.app.Activity
 import android.content.pm.ResolveInfo
 import android.content.pm.PackageManager
 import android.content.Intent
+import android.content.pm.ResolveInfo.DisplayNameComparator
 
+import java.util.Collections
 import scala.collection.JavaConversions._
 
 trait AsyncPackages extends Activity {
@@ -23,7 +25,10 @@ class PackageGetter(val packageManager : PackageManager, val postExecuter : List
         val mainIntent = new Intent(Intent.ACTION_MAIN, null)
         mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
 
-        packageManager.queryIntentActivities(mainIntent, 0).toList
+        val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
+        Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager))
+
+        resolveInfos.toList
       }
       override protected[ohlaunch] def onProgressUpdate(ignored : Unit) = {
         null
