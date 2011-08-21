@@ -14,6 +14,11 @@ import android.view.MotionEvent
 
 import android.util.Log
 
+import android.widget.TextView
+import android.widget.ImageView
+import android.view.ViewGroup
+import android.content.Context
+
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   var allPackages = List[PackageInfo]()
   var offset = 0
@@ -24,7 +29,7 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.paginated_activity_list)
 
-    adapter = new ArrayAdapter[PackageInfo](this, R.layout.activity_item)
+    adapter = new PackageAdapter(this)
     val list = findView(TR.list)
     list.setAdapter(adapter)
 
@@ -53,6 +58,25 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     offset = List(offset - perPage, 0).max
     adapter.clear
     allPackages.slice(offset, offset+perPage).foreach(adapter.add(_))
+  }
+    // package.applicationInfo.icon - or loadIcon(PackageManager)
+    // package.applicationInfo.name - or loadLabel(PackageManager)
+
+  class PackageAdapter(activity : Activity) extends ArrayAdapter[PackageInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
+    override def getView(position : Int, convertView : View, parent : ViewGroup) = {
+      val inflater = activity.getLayoutInflater
+      val packageManager = activity.getPackageManager
+      val cell = inflater.inflate(R.layout.activity_item, parent, false)
+
+
+      val item = getItem(position).asInstanceOf[PackageInfo]
+      val iconView = cell.findViewById(R.id.app_icon).asInstanceOf[ImageView]
+      iconView.setImageDrawable(item.applicationInfo.loadIcon(packageManager))
+      val nameView = cell.findViewById(R.id.app_name).asInstanceOf[TextView]
+      nameView.setText(item.applicationInfo.loadLabel(packageManager))
+
+      cell
+    }
   }
 
   class LeftRightDetector extends SimpleOnGestureListener {
