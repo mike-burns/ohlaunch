@@ -25,8 +25,11 @@ import android.widget.AdapterView
 import android.widget.AdapterView.OnItemClickListener
 import android.content.ComponentName
 
+import android.content.Intent
+
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   var allPackages = List[ResolveInfo]()
+  var numberOfPackages = 0
   var offset = 0
   var adapter = null : ArrayAdapter[ResolveInfo]
 
@@ -53,14 +56,21 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
       def onItemClick(parent : AdapterView[_], v : View, position : Int, id : Long) {
         val item = parent.getItemAtPosition(position).asInstanceOf[ResolveInfo]
   
-        val intent = getPackageManager.getLaunchIntentForPackage(
-          item.activityInfo.packageName)
+        //val intent = getPackageManager.getLaunchIntentForPackage(
+        //  item.activityInfo.packageName)
+        val intent = new Intent
+        intent.setClassName(item.activityInfo.applicationInfo.packageName,
+          item.activityInfo.name)
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        intent.setAction(Intent.ACTION_MAIN)
+        intent.addCategory(Intent.CATEGORY_LAUNCHER)
 
         startActivity(intent)
       }})
 
     withPackages { packages =>
       allPackages = packages
+      numberOfPackages = packages.length
       packages.take(perPage).foreach(adapter.add(_))
     }.go
   }
@@ -92,15 +102,15 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   }
 
   private def pageCount = {
-    val count = allPackages.length / perPage
-    if (allPackages.length % perPage > 0)
+    val count = numberOfPackages / perPage
+    if (numberOfPackages % perPage > 0)
       count + 1
     else
       count
   }
 
   private def lastPageOffset = {
-    (perPage * (allPackages.length.asInstanceOf[Float] / perPage).ceil - perPage).asInstanceOf[Int]
+    (perPage * (numberOfPackages.asInstanceOf[Float] / perPage).ceil - perPage).asInstanceOf[Int]
   }
 
   class PackageAdapter(activity : Activity) extends ArrayAdapter[ResolveInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
@@ -149,11 +159,11 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     override def onDown(ignored : MotionEvent) = { true }
 
     private def leftFling(event1 : MotionEvent, event2 : MotionEvent, xVelocity : Float, yVelocity : Float) = {
-      event1.getX() - event2.getX() > 120 && Math.abs(xVelocity) > 200
+      event1.getX - event2.getX > 120 && xVelocity.abs > 200
     }
 
     private def rightFling(event1 : MotionEvent, event2 : MotionEvent, xVelocity : Float, yVelocity : Float) = {
-      event2.getX() - event1.getX() > 120 && Math.abs(xVelocity) > 200
+      event2.getX - event1.getX > 120 && xVelocity.abs > 200
     }
   }
 }
