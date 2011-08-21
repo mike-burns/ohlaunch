@@ -21,6 +21,10 @@ import android.content.Context
 
 import android.util.DisplayMetrics
 
+import android.widget.AdapterView
+import android.widget.AdapterView.OnItemClickListener
+import android.content.ComponentName
+
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   var allPackages = List[PackageInfo]()
   var offset = 0
@@ -41,7 +45,19 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     )
     list.setOnTouchListener(new View.OnTouchListener {
       def onTouch(v : View, event : MotionEvent) = {
-        gestureDetector.onTouchEvent(event) } })
+        gestureDetector.onTouchEvent(event)
+        false
+      }})
+
+    list.setOnItemClickListener(new OnItemClickListener {
+      def onItemClick(parent : AdapterView[_], v : View, position : Int, id : Long) {
+        val item = parent.getItemAtPosition(position).asInstanceOf[PackageInfo]
+  
+        val intent = getPackageManager.getLaunchIntentForPackage(
+          item.applicationInfo.packageName)
+
+        startActivity(intent)
+      }})
 
     withPackages { packages =>
       allPackages = packages
@@ -91,29 +107,23 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     var rightCallback = { () => () }
 
     override def onFling(event1 : MotionEvent, event2 : MotionEvent, xVelocity : Float, yVelocity : Float) = {
-      Log.d("onFling", "inside onFling")
       if (leftFling(event1, event2, xVelocity, yVelocity)) {
-      Log.d("onFling", "left fling")
         leftCallback()
         false
       } else if (rightFling(event1, event2, xVelocity, yVelocity)) {
-      Log.d("onFling", "right fling")
         rightCallback()
         false
       } else {
-      Log.d("onFling", "no fling")
         true
       }
     }
 
     def onLeft(f : () => Unit) = {
-      Log.d("onLeft", "about to set leftCallback")
       leftCallback = f
       this
     }
 
     def onRight(f : () => Unit) = {
-      Log.d("onRight", "about to set rightCallback")
       rightCallback = f
       this
     }
