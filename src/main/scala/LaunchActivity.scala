@@ -3,7 +3,7 @@ package com.mike_burns.ohlaunch
 import android.app.Activity
 import android.os.Bundle
 import android.widget.ArrayAdapter
-import android.content.pm.PackageInfo
+import android.content.pm.ResolveInfo
 
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
@@ -26,9 +26,9 @@ import android.widget.AdapterView.OnItemClickListener
 import android.content.ComponentName
 
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
-  var allPackages = List[PackageInfo]()
+  var allPackages = List[ResolveInfo]()
   var offset = 0
-  var adapter = null : ArrayAdapter[PackageInfo]
+  var adapter = null : ArrayAdapter[ResolveInfo]
 
   override def onCreate(savedInstanceState: Bundle) {
     super.onCreate(savedInstanceState)
@@ -51,10 +51,10 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
 
     list.setOnItemClickListener(new OnItemClickListener {
       def onItemClick(parent : AdapterView[_], v : View, position : Int, id : Long) {
-        val item = parent.getItemAtPosition(position).asInstanceOf[PackageInfo]
+        val item = parent.getItemAtPosition(position).asInstanceOf[ResolveInfo]
   
         val intent = getPackageManager.getLaunchIntentForPackage(
-          item.applicationInfo.packageName)
+          item.activityInfo.packageName)
 
         startActivity(intent)
       }})
@@ -85,18 +85,18 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     allPackages.slice(offset, offset+perPage).foreach(adapter.add(_))
   }
 
-  class PackageAdapter(activity : Activity) extends ArrayAdapter[PackageInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
+  class PackageAdapter(activity : Activity) extends ArrayAdapter[ResolveInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
     override def getView(position : Int, convertView : View, parent : ViewGroup) = {
       val inflater = activity.getLayoutInflater
       val packageManager = activity.getPackageManager
       val cell = inflater.inflate(R.layout.activity_item, parent, false)
 
 
-      val item = getItem(position).asInstanceOf[PackageInfo]
+      val item = getItem(position).asInstanceOf[ResolveInfo]
       val iconView = cell.findViewById(R.id.app_icon).asInstanceOf[ImageView]
-      iconView.setImageDrawable(item.applicationInfo.loadIcon(packageManager))
+      iconView.setImageDrawable(item.loadIcon(packageManager))
       val nameView = cell.findViewById(R.id.app_name).asInstanceOf[TextView]
-      nameView.setText(item.applicationInfo.loadLabel(packageManager))
+      nameView.setText(item.loadLabel(packageManager))
 
       cell
     }
