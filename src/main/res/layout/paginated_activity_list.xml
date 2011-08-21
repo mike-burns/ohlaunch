@@ -10,6 +10,7 @@
         android:id="@+id/list"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
+        android:scrollbars="none"
 
         android:columnWidth="85dip"
         android:numColumns="4"
