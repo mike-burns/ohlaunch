@@ -19,11 +19,12 @@ import android.widget.ImageView
 import android.view.ViewGroup
 import android.content.Context
 
+import android.util.DisplayMetrics
+
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   var allPackages = List[PackageInfo]()
   var offset = 0
   var adapter = null : ArrayAdapter[PackageInfo]
-  val perPage = 5
 
   override def onCreate(savedInstanceState: Bundle) {
     super.onCreate(savedInstanceState)
@@ -48,6 +49,14 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     }.go
   }
 
+  private def perPage = {
+    val metrics = new DisplayMetrics
+    getWindowManager.getDefaultDisplay.getMetrics(metrics)
+
+    val perRow = (metrics.widthPixels / (85 + 10)).asInstanceOf[Int]
+    (metrics.heightPixels / ((110 + 10 + 25 + 10) / perRow)).asInstanceOf[Int]
+  }
+
   private def pageLeft {
     offset = List(offset + perPage, allPackages.length-1).min
     adapter.clear
@@ -59,8 +68,6 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     adapter.clear
     allPackages.slice(offset, offset+perPage).foreach(adapter.add(_))
   }
-    // package.applicationInfo.icon - or loadIcon(PackageManager)
-    // package.applicationInfo.name - or loadLabel(PackageManager)
 
   class PackageAdapter(activity : Activity) extends ArrayAdapter[PackageInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
     override def getView(position : Int, convertView : View, parent : ViewGroup) = {
