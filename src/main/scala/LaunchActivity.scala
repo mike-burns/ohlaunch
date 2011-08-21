@@ -40,8 +40,8 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
 
     val gestureDetector = new GestureDetector(
       new LeftRightDetector().
-        onLeft({ () => pageLeft}).
-        onRight({ () => pageRight})
+        onLeft({ () => flingLeft}).
+        onRight({ () => flingRight})
     )
     list.setOnTouchListener(new View.OnTouchListener {
       def onTouch(v : View, event : MotionEvent) = {
@@ -66,23 +66,41 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   }
 
   private def perPage = {
-    val metrics = new DisplayMetrics
-    getWindowManager.getDefaultDisplay.getMetrics(metrics)
+    val heightPixels = findView(TR.list).getHeight
 
-    val perRow = (metrics.widthPixels / (85 + 10)).asInstanceOf[Int]
-    (metrics.heightPixels / ((110 + 10 + 25 + 10) / perRow)).asInstanceOf[Int]
+    val perRow = 4
+    val cellContentHeight = 88
+    val padding = 10
+    val paddingTop = 3
+    val fudge = 10
+
+    val totalCellHeight = cellContentHeight + padding + paddingTop// + fudge
+
+    (heightPixels / totalCellHeight) * perRow
   }
 
-  private def pageLeft {
-    offset = List(offset + perPage, allPackages.length-1).min
+  private def flingLeft {
+    offset = List(offset + perPage, lastPageOffset).min
     adapter.clear
     allPackages.slice(offset, offset+perPage).foreach(adapter.add(_))
   }
 
-  private def pageRight {
+  private def flingRight {
     offset = List(offset - perPage, 0).max
     adapter.clear
     allPackages.slice(offset, offset+perPage).foreach(adapter.add(_))
+  }
+
+  private def pageCount = {
+    val count = allPackages.length / perPage
+    if (allPackages.length % perPage > 0)
+      count + 1
+    else
+      count
+  }
+
+  private def lastPageOffset = {
+    (perPage * (allPackages.length.asInstanceOf[Float] / perPage).ceil - perPage).asInstanceOf[Int]
   }
 
   class PackageAdapter(activity : Activity) extends ArrayAdapter[ResolveInfo](activity.asInstanceOf[Context], R.layout.activity_item, R.id.app_name) {
