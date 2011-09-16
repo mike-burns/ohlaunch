@@ -30,72 +30,115 @@ import java.util.ArrayList;
 import android.widget.TableRow;
 import android.widget.TableLayout;
 import android.widget.ImageView;
+import android.os.AsyncTask;
+import android.view.ViewTreeObserver;
+import android.view.ViewTreeObserver.OnGlobalLayoutListener;
 
 import android.util.Log;
 
 public class PaginatingActivity extends FragmentActivity {
   private ViewPager awesomePager;
-  private static int NUM_AWESOME_VIEWS = 20;
   private Context cxt;
-  private AwesomePagerAdapter awesomeAdapter;
 
   @Override
   public void onCreate(Bundle savedInstanceState) {
     super.onCreate(savedInstanceState);
 
-    Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
-    mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
-
-    PackageManager packageManager = getPackageManager();
-    List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(mainIntent, 0);
-    Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager));
-
-    awesomeAdapter = new AwesomePagerAdapter(
-        getSupportFragmentManager(),
-        resolveInfos);
-
     setContentView(R.layout.main);
     awesomePager = (ViewPager) findViewById(R.id.paginatorizer);
-    awesomePager.setAdapter(awesomeAdapter);
+
+    ViewTreeObserver vto = awesomePager.getViewTreeObserver();
+    vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
+      @Override
+      public void onGlobalLayout() {
+        new PackageLookUpper(awesomePager, getPackageManager()).execute();
+      }});
+  }
+
+  class PackageLookUpper extends AsyncTask<Void, Void, List<ResolveInfo>> {
+    private ViewPager pager;
+    private PackageManager packageManager;
+    private int width, height;
+
+    PackageLookUpper(ViewPager pager, PackageManager packageManager) {
+      super();
+      this.pager = pager;
+      this.packageManager = packageManager;
+      this.height = pager.getHeight();
+      this.width = pager.getWidth();
+    }
+
+    @Override
+    protected List<ResolveInfo> doInBackground(Void... ignored) {
+      Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+      mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+      List<ResolveInfo> resolveInfos = packageManager.queryIntentActivities(mainIntent, 0);
+      Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager));
+
+      return resolveInfos;
+    }
+
+    @Override
+    protected void onPostExecute(List<ResolveInfo> resolveInfos) {
+      AwesomePagerAdapter awesomeAdapter = new AwesomePagerAdapter(
+          getSupportFragmentManager(),
+          resolveInfos,
+          this.height / 88,
+          this.width / 78);
+      pager.setAdapter(awesomeAdapter);
+    }
   }
 
   private class AwesomePagerAdapter extends FragmentPagerAdapter {
     List<ResolveInfo> resolveInfos;
+    private int numRows = 1;
+    private int numCols = 1;
 
-    public AwesomePagerAdapter(FragmentManager fm, List<ResolveInfo> resolveInfos) {
+    public AwesomePagerAdapter(FragmentManager fm, List<ResolveInfo> resolveInfos, int numRows, int numCols) {
       super(fm);
       this.resolveInfos = resolveInfos;
+      this.numRows = numRows;
+      this.numCols = numCols;
     }
 
     @Override
     public int getCount() {
-      return NUM_AWESOME_VIEWS;
+      return (int)Math.ceil(this.resolveInfos.size() / (float)(this.numRows * this.numCols));
     }
 
     @Override
     public Fragment getItem(int position) {
-      return AppsFragment.newInstance(position, resolveInfos);
+      return AppsFragment.newInstance(position, resolveInfos, numRows, numCols);
     }
   }
 
   public static class AppsFragment extends Fragment {
     int page = 0;
     List<ResolveInfo> resolveInfos = new ArrayList<ResolveInfo>();
+    private int numRows = 1;
+    private int numCols = 1;
 
-    static AppsFragment newInstance(int page, List<ResolveInfo> resolveInfos) {
+    static AppsFragment newInstance(int page, List<ResolveInfo> resolveInfos, int numRows, int numCols) {
       return (new AppsFragment()).
         setPage(page).
+        setDimensions(numRows, numCols).
         setResolveInfos(resolveInfos);
     }
 
     AppsFragment setPage(int p) {
-      Log.d("AppsFragment", "setting the page to "+p);
       this.page = p;
       return this;
     }
 
     AppsFragment setResolveInfos(List<ResolveInfo> r) {
       this.resolveInfos = r;
+      return this;
+    }
+
+    AppsFragment setDimensions(int numRows, int numCols) {
+      this.numRows = numRows;
+      this.numCols = numCols;
       return this;
     }
 
@@ -124,6 +167,8 @@ public class PaginatingActivity extends FragmentActivity {
             tv.setText(resolveInfo.loadLabel(packageManager));
             iv.setImageDrawable(resolveInfo.loadIcon(packageManager));
 
+            cell.setOnClickListener(new AppOpener(resolveInfo));
+
             tr.addView(cell);
           }
         }
@@ -139,11 +184,32 @@ public class PaginatingActivity extends FragmentActivity {
     }
 
     private int numberOfRows() {
-      return 4;
+      return numRows;
     }
 
     private int numberOfColumns() {
-      return 4;
+      return numCols;
     }
+
+    class AppOpener implements View.OnClickListener {
+      private ResolveInfo resolveInfo;
+
+      AppOpener(ResolveInfo resolveInfo) {
+        this.resolveInfo = resolveInfo;
+      }
+
+      public void onClick(View v) {
+        Intent i = new Intent();
+
+        i.setClassName(resolveInfo.activityInfo.applicationInfo.packageName,
+            resolveInfo.activityInfo.name);
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        i.setAction(Intent.ACTION_MAIN);
+        i.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        startActivity(i);
+      }
+    }
+
   }
 }
