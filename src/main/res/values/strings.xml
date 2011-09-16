@@ -1,5 +1,0 @@
-<resources>
-    <string name="app_name">Oh! Launch!</string>
-    <string name="activity_list_empty">No applications found</string>
-    <string name="activity_list_loading">Loading your application list</string>
-</resources>
