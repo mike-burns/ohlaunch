@@ -27,6 +27,8 @@ import android.content.ComponentName
 
 import android.content.Intent
 
+import android.os.Debug
+
 class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
   var allPackages = List[ResolveInfo]()
   var numberOfPackages = 0
@@ -37,8 +39,9 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
     super.onCreate(savedInstanceState)
     setContentView(R.layout.paginated_activity_list)
 
-    adapter = new PackageAdapter(this)
     val list = findView(TR.list)
+
+    adapter = new PackageAdapter(this)
     list.setAdapter(adapter)
 
     val gestureDetector = new GestureDetector(
@@ -56,8 +59,6 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
       def onItemClick(parent : AdapterView[_], v : View, position : Int, id : Long) {
         val item = parent.getItemAtPosition(position).asInstanceOf[ResolveInfo]
   
-        //val intent = getPackageManager.getLaunchIntentForPackage(
-        //  item.activityInfo.packageName)
         val intent = new Intent
         intent.setClassName(item.activityInfo.applicationInfo.packageName,
           item.activityInfo.name)
@@ -68,11 +69,20 @@ class LaunchActivity extends Activity with AsyncPackages with TypedActivity {
         startActivity(intent)
       }})
 
-    withPackages { packages =>
-      allPackages = packages
-      numberOfPackages = packages.length
-      packages.take(perPage).foreach(adapter.add(_))
+    val spinner = findView(TR.spinner)
+
+    withPackages(showApps(spinner)).butFirst { () =>
+      Debug.startMethodTracing
+      spinner.setVisibility(View.VISIBLE)
     }.go
+  }
+
+  private def showApps(spinner : View)(apps : List[ResolveInfo]) {
+    allPackages = apps
+    numberOfPackages = apps.length
+    apps.take(perPage).foreach(adapter.add(_))
+    spinner.setVisibility(View.GONE)
+    Debug.stopMethodTracing
   }
 
   private def perPage = {

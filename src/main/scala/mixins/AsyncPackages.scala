@@ -1,4 +1,4 @@
-package com.mike_burns.ohlaunch
+eackage com.mike_burns.ohlaunch
 
 import android.app.Activity
 import android.content.pm.ResolveInfo
