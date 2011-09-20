@@ -36,8 +36,8 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener
 
 import android.util.Log
 
-class PaginatingActivity extends FragmentActivity {
-  val awesomePager : ViewPager = null
+class LaunchActivity extends FragmentActivity {
+  var awesomePager : ViewPager = null
 
   override def onCreate(savedInstanceState : Bundle) {
     super.onCreate(savedInstanceState)
@@ -45,28 +45,18 @@ class PaginatingActivity extends FragmentActivity {
     setContentView(R.layout.main)
     awesomePager = findViewById(R.id.paginatorizer).asInstanceOf[ViewPager]
 
-    vto = awesomePager.getViewTreeObserver()
+    val vto = awesomePager.getViewTreeObserver
     vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
       override def onGlobalLayout {
-        new PackageLookUpper(awesomePager, getPackageManager()).execute(1)
+        new PackageLookUpper(awesomePager, getPackageManager()).execute(null)
       }})
   }
 
-  class PackageLookUpper extends AsyncTask[Void, Void, List[ResolveInfo]] {
-    val pager : ViewPager = null
-    val packageManager : PackageManager = null
-    val width = 1
-    val height = 1
+  class PackageLookUpper(pager : ViewPager, packageManager : PackageManager) extends SingleParamAsyncTask[Void, Void, List[ResolveInfo]] {
+    def width = { pager.getWidth }
+    def height = { pager.getHeight }
 
-    def this(pager : ViewPager, packageManager : packageManager) = {
-      super()
-      this.pager = pager
-      this.packageManager = packageManager
-      this.height = pager.getHeight
-      this.width = pager.getWidth
-    }
-
-    override def doInBackground(ignored : Void...) : List[ResolveInfo] = {
+    override def doInBackground(ignored : Void) : List[ResolveInfo] = {
       val mainIntent = new Intent(Intent.ACTION_MAIN, null)
       mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
 
@@ -84,26 +74,17 @@ class PaginatingActivity extends FragmentActivity {
           this.width / 78);
       pager.setAdapter(awesomeAdapter)
     }
+
+    def onProgressUpdate(ignored : Void) {}
   }
 
-  class AwesomePagerAdapter extends FragmentPagerAdapter {
-    val resolveInfos : List[ResolveInfo] = null
-    val numRows = 1
-    val numCols = 1
-
-    this(fm : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) = {
-      super(fm)
-      this.resolveInfos = resolveInfos
-      this.numRows = numRows
-      this.numCols = numCols
-    }
-
-    override getCount = {
+  class AwesomePagerAdapter(fm : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fm) {
+    override def getCount = {
       Math.ceil(this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).asInstanceOf[Int]
     }
 
     override def getItem(position : Int) = {
-      AppsFragment.newInstance(position, resolveInfos, numRows, numCols)
+      AppsFragment.newInstance(position, resolveInfos, this.numRows, numCols)
     }
   }
 
@@ -119,7 +100,7 @@ class PaginatingActivity extends FragmentActivity {
 
   class AppsFragment extends Fragment {
     var page = 0
-    var resolveInfos = new ArrayList[ResolveInfo]()
+    var resolveInfos = null : List[ResolveInfo]
     var numRows = 1
     var numCols = 1
 
@@ -142,68 +123,53 @@ class PaginatingActivity extends FragmentActivity {
     override def onCreateView(inflater : LayoutInflater, container : ViewGroup, savedInstanceState : Bundle) = {
       val context = getActivity()
       val packageManager = context.getPackageManager()
-      val cell = inflater.inflate(R.layout.app_item, null, false)
-      var tv
-      var iv
+      var cell = inflater.inflate(R.layout.app_item, null, false)
+      var tv = null : TextView
+      var iv = null : ImageView
       val table = new TableLayout(context)
-      var tr
-      var resolveInfo
-      var position
+      var tr = null : TableRow
+      var resolveInfo = null : ResolveInfo
 
-      for (Int rowIndex = 0; rowIndex < numberOfRows(); rowIndex++) {
-        tr = new TableRow(context);
+      for (rowIndex <- 0 until this.numRows) {
+        tr = new TableRow(context)
 
-        for (Int columnIndex = 0; columnIndex < numberOfColumns(); columnIndex++) {
-          if (positionIndex(rowIndex, columnIndex) < resolveInfos.size()) {
-            resolveInfo = resolveInfos.get(positionIndex(rowIndex, columnIndex));
-            cell = inflater.inflate(R.layout.app_item, null, false);
-            tv = (TextView)cell.findViewById(R.id.app_name);
-            iv = (ImageView)cell.findViewById(R.id.app_icon);
+        for (columnIndex <- 0 until this.numCols) {
+          if (positionIndex(rowIndex, columnIndex) < resolveInfos.size) {
+            resolveInfo = resolveInfos.get(positionIndex(rowIndex, columnIndex))
+            cell = inflater.inflate(R.layout.app_item, null, false)
+            tv = cell.findViewById(R.id.app_name).asInstanceOf[TextView]
+            iv = cell.findViewById(R.id.app_icon).asInstanceOf[ImageView]
 
-            tv.setText(resolveInfo.loadLabel(packageManager));
-            iv.setImageDrawable(resolveInfo.loadIcon(packageManager));
+            tv.setText(resolveInfo.loadLabel(packageManager))
+            iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
 
-            cell.setOnClickListener(new AppOpener(resolveInfo));
+            cell.setOnClickListener(new AppOpener(resolveInfo))
 
-            tr.addView(cell);
+            tr.addView(cell)
           }
         }
-        table.addView(tr);
+        table.addView(tr)
       }
 
-      return table;
+      table
     }
 
-    private Int positionIndex(Int rowIndex, Int columnIndex) {
-      return (this.page * numberOfRows() * numberOfColumns()) +
-        numberOfColumns() * rowIndex + (columnIndex + 1) - 1;
+    def positionIndex(rowIndex : Int, columnIndex : Int) = {
+      (this.page * this.numRows * this.numCols) +
+        this.numCols * rowIndex + (columnIndex + 1) - 1;
     }
 
-    private Int numberOfRows() {
-      return numRows;
-    }
-
-    private Int numberOfColumns() {
-      return numCols;
-    }
-
-    class AppOpener implements View.OnClickListener {
-      private ResolveInfo resolveInfo;
-
-      AppOpener(ResolveInfo resolveInfo) {
-        this.resolveInfo = resolveInfo;
-      }
-
-      public void onClick(View v) {
-        Intent i = new Intent();
+    class AppOpener(val resolveInfo : ResolveInfo) extends View.OnClickListener {
+      def onClick(v : View) {
+        val i = new Intent()
 
         i.setClassName(resolveInfo.activityInfo.applicationInfo.packageName,
-            resolveInfo.activityInfo.name);
-        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-        i.setAction(Intent.ACTION_MAIN);
-        i.addCategory(Intent.CATEGORY_LAUNCHER);
+            resolveInfo.activityInfo.name)
+        i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        i.setAction(Intent.ACTION_MAIN)
+        i.addCategory(Intent.CATEGORY_LAUNCHER)
 
-        startActivity(i);
+        startActivity(i)
       }
     }
 
