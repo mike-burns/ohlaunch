@@ -36,86 +36,74 @@ import android.view.ViewTreeObserver.OnGlobalLayoutListener
 
 import android.content.res.Configuration
 import java.lang.ClassLoader
+import android.widget.LinearLayout
 
 import android.util.Log
 
 class LaunchActivity extends FragmentActivity {
-  var resolveInfosPager : ViewPager = null
-
   override def onCreate(savedInstanceState : Bundle) {
     super.onCreate(savedInstanceState)
 
     setContentView(R.layout.main)
 
-    resolveInfosPager = findViewById(R.id.paginatorizer).asInstanceOf[ViewPager]
+    val resolveInfosPager = findViewById(R.id.paginatorizer).asInstanceOf[ViewPager]
 
     val vto = resolveInfosPager.getViewTreeObserver
     vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
       override def onGlobalLayout {
-        new PackageLookUpper(resolveInfosPager, getPackageManager()).execute(null)
+        new PackageLookUpper(resolveInfosPager, getPackageManager, getSupportFragmentManager).execute(null)
       }})
   }
 
   override def onConfigurationChanged(c : Configuration) {
     super.onConfigurationChanged(c)
   }
+}
 
-  class PackageLookUpper(pager : ViewPager, packageManager : PackageManager) extends SingleParamAsyncTask[Void, Void, List[ResolveInfo]] {
-    def width = { pager.getWidth }
-    def height = { pager.getHeight }
+class PackageLookUpper(pager : ViewPager, packageManager : PackageManager, fragmentManager : FragmentManager) extends SingleParamAsyncTask[Void, Void, List[ResolveInfo]] {
+  def width = { pager.getWidth }
+  def height = { pager.getHeight }
 
-    override def doInBackground(ignored : Void) : List[ResolveInfo] = {
-      val mainIntent = new Intent(Intent.ACTION_MAIN, null)
-      mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
+  override def doInBackground(ignored : Void) : List[ResolveInfo] = {
+    val mainIntent = new Intent(Intent.ACTION_MAIN, null)
+    mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
 
-      val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
-      Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager))
+    val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
+    Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager))
 
-      resolveInfos
-    }
-
-    override def onPostExecute(resolveInfos : List[ResolveInfo]) {
-      val resolveInfosAdapter = new ResolveInfosPagerAdapter(
-          getSupportFragmentManager,
-          resolveInfos,
-          this.height / 88,
-          this.width / 78);
-      pager.setAdapter(resolveInfosAdapter)
-    }
-
-    def onProgressUpdate(ignored : Void) {}
+    resolveInfos
   }
 
-  class ResolveInfosPagerAdapter(fm : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fm) {
-    override def getCount = {
-      Math.ceil(this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).asInstanceOf[Int]
-    }
-
-    override def restoreState(state : Parcelable, loader : ClassLoader) {
-      Log.d("ResolveInfosPagerAdapter", "state = "+state.toString)
-      super.restoreState(state, loader)
-    }
-    override def startUpdate(container : View) {
-      Log.d("ResolveInfosPagerAdapter", "startUpdate("+container.toString+")")
-      super.startUpdate(container)
-    }
-
-    override def getItem(position : Int) = {
-      Log.d("ResolveInfosPagerAdapter", "inside getItem("+position+")")
-      AppsFragment.newInstance(position, resolveInfos, this.numRows, numCols)
-    }
+  override def onPostExecute(resolveInfos : List[ResolveInfo]) {
+    val resolveInfosAdapter = new ResolveInfosPagerAdapter(
+        fragmentManager,
+        resolveInfos,
+        this.height / 88,
+        this.width / 78);
+    pager.setAdapter(resolveInfosAdapter)
   }
 
-  object AppsFragment {
-    def newInstance(page : Int, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) = {
-      (new AppsFragment()).
-        setPage(page).
-        setDimensions(numRows, numCols).
-        setResolveInfos(resolveInfos)
-    }
+  def onProgressUpdate(ignored : Void) {}
+}
+
+class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fragmentManager) {
+  override def getCount = {
+    Math.ceil(this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).asInstanceOf[Int]
   }
 
+  override def getItem(position : Int) = {
+    Log.d("ResolveInfosPagerAdapter", "inside getItem("+position+")")
+    AppsFragment.newInstance(position, resolveInfos, this.numRows, numCols)
+  }
+}
 
+object AppsFragment {
+  def newInstance(page : Int, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) = {
+    (new AppsFragment()).
+      setPage(page).
+      setDimensions(numRows, numCols).
+      setResolveInfos(resolveInfos)
+  }
 }
 
 class AppsFragment extends Fragment {
@@ -142,11 +130,11 @@ class AppsFragment extends Fragment {
 
   override def onCreateView(inflater : LayoutInflater, container : ViewGroup, savedInstanceState : Bundle) = {
     val context = getActivity
-    val packageManager = context.getPackageManager()
+    val table = new TableLayout(context)
+    val packageManager = context.getPackageManager
     var cell = inflater.inflate(R.layout.app_item, null, false)
     var tv = null : TextView
     var iv = null : ImageView
-    val table = new TableLayout(context)
     var tr = null : TableRow
     var resolveInfo = null : ResolveInfo
 
@@ -193,15 +181,4 @@ class AppsFragment extends Fragment {
     }
   }
 
-}
-
-class EmptyAdapter extends PagerAdapter {
-  override def restoreState(parcel : Parcelable, classLoader : ClassLoader) {}
-  override def saveState() = null
-  override def isViewFromObject(view : android.view.View, ignored : Any) = true
-  override def finishUpdate(view : View) {}
-  override def destroyItem(view : View, a : Int, b: Any) {}
-  override def instantiateItem(view : View, position : Int) = null
-  override def startUpdate(view : View) {}
-  override def getCount = 0
 }
