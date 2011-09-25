@@ -56,6 +56,7 @@ class LaunchActivity extends FragmentActivity {
   }
 
   override def onConfigurationChanged(c : Configuration) {
+    // ViewPager does not support rotations.
     super.onConfigurationChanged(c)
   }
 }
