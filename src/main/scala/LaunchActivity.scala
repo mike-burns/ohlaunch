@@ -21,12 +21,9 @@ import android.view.ViewGroup
 
 import android.R.layout
 
-import java.util.Collections
 import android.content.pm.ResolveInfo
-import java.util.List
 import android.content.pm.PackageManager
 import android.content.Intent
-import java.util.ArrayList
 import android.widget.TableRow
 import android.widget.TableLayout
 import android.widget.ImageView
@@ -43,15 +40,15 @@ import android.util.Log
 import TypedResource._
 import GloballyLaidOut._
 
-class LaunchActivity extends FragmentActivity with TypedFragmentActivity {
+class LaunchActivity extends FragmentActivity with TypedFragmentActivity with AsyncPackages {
   override def onCreate(savedInstanceState : Bundle) {
     super.onCreate(savedInstanceState)
 
     setContentView(R.layout.main)
 
-    val resolveInfosPager = findView(TR.paginatorizer)
-    resolveInfosPager.onGlobalLayout {
-      new PackageLookUpper(resolveInfosPager, getPackageManager, getSupportFragmentManager).execute(null)
+    val pager = findView(TR.paginatorizer)
+    pager.onGlobalLayout {
+      withPackages(setPagerAdapter(pager)).go
     }
   }
 
@@ -59,32 +56,15 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity {
     // ViewPager does not support rotations.
     super.onConfigurationChanged(c)
   }
-}
 
-class PackageLookUpper(pager : ViewPager, packageManager : PackageManager, fragmentManager : FragmentManager) extends SingleParamAsyncTask[Void, Void, List[ResolveInfo]] {
-  def width = { pager.getWidth }
-  def height = { pager.getHeight }
-
-  override def doInBackground(ignored : Void) : List[ResolveInfo] = {
-    val mainIntent = new Intent(Intent.ACTION_MAIN, null)
-    mainIntent.addCategory(Intent.CATEGORY_LAUNCHER)
-
-    val resolveInfos = packageManager.queryIntentActivities(mainIntent, 0)
-    Collections.sort(resolveInfos, new ResolveInfo.DisplayNameComparator(packageManager))
-
-    resolveInfos
-  }
-
-  override def onPostExecute(resolveInfos : List[ResolveInfo]) {
-    val resolveInfosAdapter = new ResolveInfosPagerAdapter(
-        fragmentManager,
+  def setPagerAdapter(pager : ViewPager)(resolveInfos : List[ResolveInfo]) {
+    pager.setAdapter(
+      new ResolveInfosPagerAdapter(
+        getSupportFragmentManager,
         resolveInfos,
-        this.height / 88,
-        this.width / 78);
-    pager.setAdapter(resolveInfosAdapter)
+        pager.getHeight / 88,
+        pager.getWidth / 78))
   }
-
-  def onProgressUpdate(ignored : Void) {}
 }
 
 class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fragmentManager) {
@@ -93,7 +73,6 @@ class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos :
   }
 
   override def getItem(position : Int) = {
-    Log.d("ResolveInfosPagerAdapter", "inside getItem("+position+")")
     AppsFragment.newInstance(position, resolveInfos, this.numRows, numCols)
   }
 }
@@ -144,7 +123,7 @@ class AppsFragment extends Fragment with TypedFragment {
 
       for (columnIndex <- 0 until this.numCols) {
         if (positionIndex(rowIndex, columnIndex) < resolveInfos.size) {
-          resolveInfo = resolveInfos.get(positionIndex(rowIndex, columnIndex))
+          resolveInfo = resolveInfos(positionIndex(rowIndex, columnIndex))
           cell = inflater.inflate(R.layout.app_item, null, false)
           tv = cell.findView(TR.app_name)
           iv = cell.findView(TR.app_icon)
