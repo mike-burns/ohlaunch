@@ -41,6 +41,7 @@ import android.widget.LinearLayout
 import android.util.Log
 
 import TypedResource._
+import GloballyLaidOut._
 
 class LaunchActivity extends FragmentActivity with TypedFragmentActivity {
   override def onCreate(savedInstanceState : Bundle) {
@@ -49,12 +50,9 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity {
     setContentView(R.layout.main)
 
     val resolveInfosPager = findView(TR.paginatorizer)
-
-    val vto = resolveInfosPager.getViewTreeObserver
-    vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
-      override def onGlobalLayout {
-        new PackageLookUpper(resolveInfosPager, getPackageManager, getSupportFragmentManager).execute(null)
-      }})
+    resolveInfosPager.onGlobalLayout {
+      new PackageLookUpper(resolveInfosPager, getPackageManager, getSupportFragmentManager).execute(null)
+    }
   }
 
   override def onConfigurationChanged(c : Configuration) {
