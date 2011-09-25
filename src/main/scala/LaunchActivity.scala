@@ -69,7 +69,7 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity with As
 
 class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fragmentManager) {
   override def getCount = {
-    Math.ceil(this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).asInstanceOf[Int]
+    (this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).ceil.asInstanceOf[Int]
   }
 
   override def getItem(position : Int) = {
