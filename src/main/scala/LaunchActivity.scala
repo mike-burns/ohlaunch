@@ -40,13 +40,15 @@ import android.widget.LinearLayout
 
 import android.util.Log
 
-class LaunchActivity extends FragmentActivity {
+import TypedResource._
+
+class LaunchActivity extends FragmentActivity with TypedFragmentActivity {
   override def onCreate(savedInstanceState : Bundle) {
     super.onCreate(savedInstanceState)
 
     setContentView(R.layout.main)
 
-    val resolveInfosPager = findViewById(R.id.paginatorizer).asInstanceOf[ViewPager]
+    val resolveInfosPager = findView(TR.paginatorizer)
 
     val vto = resolveInfosPager.getViewTreeObserver
     vto.addOnGlobalLayoutListener(new OnGlobalLayoutListener() {
@@ -107,7 +109,7 @@ object AppsFragment {
   }
 }
 
-class AppsFragment extends Fragment {
+class AppsFragment extends Fragment with TypedFragment {
   var page = 0
   var resolveInfos = null : List[ResolveInfo]
   var numRows = 1
@@ -146,8 +148,8 @@ class AppsFragment extends Fragment {
         if (positionIndex(rowIndex, columnIndex) < resolveInfos.size) {
           resolveInfo = resolveInfos.get(positionIndex(rowIndex, columnIndex))
           cell = inflater.inflate(R.layout.app_item, null, false)
-          tv = cell.findViewById(R.id.app_name).asInstanceOf[TextView]
-          iv = cell.findViewById(R.id.app_icon).asInstanceOf[ImageView]
+          tv = cell.findView(TR.app_name)
+          iv = cell.findView(TR.app_icon)
 
           tv.setText(resolveInfo.loadLabel(packageManager))
           iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
