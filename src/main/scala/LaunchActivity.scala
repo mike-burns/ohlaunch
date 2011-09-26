@@ -35,10 +35,13 @@ import android.content.res.Configuration
 import java.lang.ClassLoader
 import android.widget.LinearLayout
 
+import java.util.ArrayList
+
 import android.util.Log
 
 import TypedResource._
 import GloballyLaidOut._
+import scala.collection.JavaConversions._
 
 class LaunchActivity extends FragmentActivity with TypedFragmentActivity with AsyncPackages {
   override def onCreate(savedInstanceState : Bundle) {
@@ -79,37 +82,36 @@ class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos :
 
 object AppsFragment {
   def newInstance(page : Int, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) = {
-    (new AppsFragment()).
-      setPage(page).
-      setDimensions(numRows, numCols).
-      setResolveInfos(resolveInfos)
+    val resolveInfosArrayList = new ArrayList[ResolveInfo](resolveInfos.toIterable)
+
+    val b = new Bundle()
+    b.putInt("page", page)
+    b.putInt("numRows", numRows)
+    b.putInt("numCols", numCols)
+    b.putParcelableArrayList("resolveInfos", resolveInfosArrayList)
+
+    val f = new AppsFragment()
+    f.setArguments(b)
+    f
   }
 }
 
 class AppsFragment extends Fragment with TypedFragment {
-  var page = 0
-  var resolveInfos = null : List[ResolveInfo]
-  var numRows = 1
-  var numCols = 1
-
-  def setPage(p : Int) = {
-    this.page = p
-    this
-  }
-
-  def setResolveInfos(r : List[ResolveInfo]) = {
-    this.resolveInfos = r
-    this
-  }
-
-  def setDimensions(numRows : Int, numCols : Int) = {
-    this.numRows = numRows
-    this.numCols = numCols
-    this
-  }
-
   override def onCreateView(inflater : LayoutInflater, container : ViewGroup, savedInstanceState : Bundle) = {
-    val context = getActivity
+    val b = getArguments
+
+    val page = b.getInt("page", 0)
+    val numRows = b.getInt("numRows", 1)
+    val numCols = b.getInt("numCols", 1)
+    val resolveInfosArrayList = b.getParcelableArrayList("resolveInfos")
+
+    val tableBuilder = new TableBuilder(getActivity, inflater, numRows, numCols, page, resolveInfosArrayList.toList)
+    tableBuilder.build
+  }
+}
+
+class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, numCols : Int, page : Int, resolveInfos : List[ResolveInfo]) {
+  def build = {
     val table = new TableLayout(context)
     val packageManager = context.getPackageManager
     var cell = inflater.inflate(R.layout.app_item, null, false)
@@ -157,7 +159,7 @@ class AppsFragment extends Fragment with TypedFragment {
       i.setAction(Intent.ACTION_MAIN)
       i.addCategory(Intent.CATEGORY_LAUNCHER)
 
-      startActivity(i)
+      context.startActivity(i)
     }
   }
 
