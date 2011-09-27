@@ -42,6 +42,7 @@ import android.util.Log
 import TypedResource._
 import GloballyLaidOut._
 import scala.collection.JavaConversions._
+import ResolveInfoWithIntent._
 
 class LaunchActivity extends FragmentActivity with TypedFragmentActivity with AsyncPackages {
   override def onCreate(savedInstanceState : Bundle) {
@@ -151,15 +152,7 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
 
   class AppOpener(val resolveInfo : ResolveInfo) extends View.OnClickListener {
     def onClick(v : View) {
-      val i = new Intent()
-
-      i.setClassName(resolveInfo.activityInfo.applicationInfo.packageName,
-          resolveInfo.activityInfo.name)
-      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      i.setAction(Intent.ACTION_MAIN)
-      i.addCategory(Intent.CATEGORY_LAUNCHER)
-
-      context.startActivity(i)
+      context.startActivity(resolveInfo.asLauncherIntent)
     }
   }
 
