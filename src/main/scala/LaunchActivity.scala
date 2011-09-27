@@ -1,39 +1,23 @@
 package com.mike_burns.ohlaunch
 
-import android.app.Activity
 import android.content.Context
-import android.graphics.Color
 import android.os.Bundle
-import android.os.Parcelable
-import android.support.v4.view.ViewPager
-import android.view.View
 import android.widget.TextView
 
+import android.support.v4.view.ViewPager
 import android.support.v4.app.Fragment
 import android.support.v4.app.FragmentActivity
 import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
-import android.support.v4.app.ListFragment
-import android.support.v4.view.PagerAdapter
 import android.view.LayoutInflater
-import android.widget.ArrayAdapter
 import android.view.ViewGroup
 
-import android.R.layout
-
 import android.content.pm.ResolveInfo
-import android.content.pm.PackageManager
-import android.content.Intent
 import android.widget.TableRow
 import android.widget.TableLayout
 import android.widget.ImageView
-import android.os.AsyncTask
-import android.view.ViewTreeObserver
-import android.view.ViewTreeObserver.OnGlobalLayoutListener
 
 import android.content.res.Configuration
-import java.lang.ClassLoader
-import android.widget.LinearLayout
 
 import java.util.ArrayList
 
