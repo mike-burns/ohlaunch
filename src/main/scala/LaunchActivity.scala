@@ -114,53 +114,78 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
   def build = {
     val table = new TableLayout(context)
     val packageManager = context.getPackageManager
-    var cell = inflater.inflate(R.layout.app_item, null, false)
-    var tv = null : TextView
-    var iv = null : ImageView
-    var tr = null : TableRow
-    var resolveInfo = null : ResolveInfo
+    val position = new Position(page, numRows, numCols)
 
     for (rowIndex <- 0 until this.numRows) {
-      tr = new TableRow(context)
-
-      for (columnIndex <- 0 until this.numCols) {
-        if (positionIndex(rowIndex, columnIndex) < resolveInfos.size) {
-          resolveInfo = resolveInfos(positionIndex(rowIndex, columnIndex))
-          cell = inflater.inflate(R.layout.app_item, null, false)
-          tv = cell.findView(TR.app_name)
-          iv = cell.findView(TR.app_icon)
-
-          tv.setText(resolveInfo.loadLabel(packageManager))
-          iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
-
-          cell.setOnClickListener(new AppOpener(resolveInfo))
-
-          tr.addView(cell)
-        }
-      }
-      table.addView(tr)
+      val rowBuilder = new RowBuilder(position.withRowIndex(rowIndex), context, packageManager, resolveInfos, inflater)
+      table.addView(rowBuilder.build)
     }
 
     table
   }
+}
 
-  def positionIndex(rowIndex : Int, columnIndex : Int) = {
+class Position(page : Int, numRows : Int, val numCols : Int) {
+  var rowIndex = 0
+  var  columnIndex = 0
+
+  def withRowIndex(i : Int) = {
+    this.rowIndex = i
+    this
+  }
+
+  def withColumnIndex(i : Int) = {
+    this.columnIndex = i
+    this
+  }
+
+  def index = {
     (this.page * this.numRows * this.numCols) +
-      this.numCols * rowIndex + (columnIndex + 1) - 1;
+      this.numCols * this.rowIndex + (this.columnIndex + 1) - 1;
   }
+}
 
-  class AppOpener(val resolveInfo : ResolveInfo) extends View.OnClickListener {
-    def onClick(v : View) {
-      val i = new Intent()
+class RowBuilder(position : Position, context : Context, packageManager : PackageManager, resolveInfos : List[ResolveInfo], inflater : LayoutInflater) {
+  def build = {
+    val tr = new TableRow(context)
 
-      i.setClassName(resolveInfo.activityInfo.applicationInfo.packageName,
-          resolveInfo.activityInfo.name)
-      i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-      i.setAction(Intent.ACTION_MAIN)
-      i.addCategory(Intent.CATEGORY_LAUNCHER)
+    for (columnIndex <- 0 until position.numCols) {
+      val idx = position.withColumnIndex(columnIndex).index
 
-      context.startActivity(i)
+      if (idx < resolveInfos.size) {
+        val cellBuilder = new CellBuilder(context, inflater, packageManager, resolveInfos(idx))
+        tr.addView(cellBuilder.build)
+      }
     }
+    tr
   }
+}
 
+class CellBuilder(context : Context, inflater : LayoutInflater, packageManager : PackageManager, resolveInfo : ResolveInfo) {
+  def build = {
+    val cell = inflater.inflate(R.layout.app_item, null, false)
+    val tv = cell.findView(TR.app_name)
+    val iv = cell.findView(TR.app_icon)
+
+    tv.setText(resolveInfo.loadLabel(packageManager))
+    iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
+
+    cell.setOnClickListener(new AppOpener(context, resolveInfo))
+
+    cell
+  }
+}
+
+class AppOpener(context : Context, resolveInfo : ResolveInfo) extends View.OnClickListener {
+  def onClick(v : View) {
+    val i = new Intent()
+
+    i.setClassName(resolveInfo.activityInfo.applicationInfo.packageName,
+    resolveInfo.activityInfo.name)
+    i.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+    i.setAction(Intent.ACTION_MAIN)
+    i.addCategory(Intent.CATEGORY_LAUNCHER)
+
+    context.startActivity(i)
+  }
 }
