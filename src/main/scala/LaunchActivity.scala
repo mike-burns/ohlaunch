@@ -39,10 +39,11 @@ import java.util.ArrayList
 
 import android.util.Log
 
+import scala.collection.JavaConversions._
 import TypedResource._
 import GloballyLaidOut._
-import scala.collection.JavaConversions._
 import ResolveInfoWithIntent._
+import ViewWithOnClick._
 
 class LaunchActivity extends FragmentActivity with TypedFragmentActivity with AsyncPackages {
   override def onCreate(savedInstanceState : Bundle) {
@@ -119,14 +120,14 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
     var tv = null : TextView
     var iv = null : ImageView
     var tr = null : TableRow
-    var resolveInfo = null : ResolveInfo
 
     for (rowIndex <- 0 until this.numRows) {
       tr = new TableRow(context)
 
       for (columnIndex <- 0 until this.numCols) {
-        if (positionIndex(rowIndex, columnIndex) < resolveInfos.size) {
-          resolveInfo = resolveInfos(positionIndex(rowIndex, columnIndex))
+        val idx = positionIndex(rowIndex, columnIndex)
+        if (idx < resolveInfos.size) {
+          val resolveInfo = resolveInfos(idx)
           cell = inflater.inflate(R.layout.app_item, null, false)
           tv = cell.findView(TR.app_name)
           iv = cell.findView(TR.app_icon)
@@ -134,7 +135,9 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
           tv.setText(resolveInfo.loadLabel(packageManager))
           iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
 
-          cell.setOnClickListener(new AppOpener(resolveInfo))
+          cell.onClick { view =>
+            context.startActivity(resolveInfo.asLauncherIntent)
+          }
 
           tr.addView(cell)
         }
@@ -149,11 +152,4 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
     (this.page * this.numRows * this.numCols) +
       this.numCols * rowIndex + (columnIndex + 1) - 1;
   }
-
-  class AppOpener(val resolveInfo : ResolveInfo) extends View.OnClickListener {
-    def onClick(v : View) {
-      context.startActivity(resolveInfo.asLauncherIntent)
-    }
-  }
-
 }
