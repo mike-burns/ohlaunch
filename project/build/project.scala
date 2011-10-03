@@ -8,7 +8,6 @@ class Parent(info: ProjectInfo) extends ParentProject(info) {
   override def updateAction = task { None }
 
   lazy val main  = project(".", "Oh! Launch!", new MainProject(_))
-  lazy val tests = project("tests",  "tests", new TestProject(_), main)
 
   class MainProject(info: ProjectInfo) extends AndroidProject(info) with Defaults with MarketPublish with TypedResources {
     val keyalias  = "change-me"
@@ -16,7 +15,13 @@ class Parent(info: ProjectInfo) extends ParentProject(info) {
 
     // https://github.com/jberkel/android-plugin/issues/24 :
     val toKeep = List(
-      "scala.Function1"
+      "scala.Function1",
+      "org.xml.sax.EntityResolver",
+      "scala.runtime.BoxedUnit",
+      "scala.runtime.ObjectRef",
+      "android.support.v4.**",
+      "scala.collection.immutable.List",
+      "scala.Function0"
     )
 
     val keepOptions = toKeep.map { "-keep public class " + _ }
@@ -30,6 +35,4 @@ class Parent(info: ProjectInfo) extends ParentProject(info) {
       (super.proguardOption ++ keepOptions ++ dontNoteOptions) mkString " "
     }
   }
-
-  class TestProject(info: ProjectInfo) extends AndroidTestProject(info) with Defaults
 }
