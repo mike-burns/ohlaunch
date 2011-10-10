@@ -1,0 +1,52 @@
+Store a SQLite table of resolve_infos:
+
+  position     INT
+  visible      BOOLEAN
+  package_name TEXT    # resolveInfo.activityInfo.applicationInfo.packageName
+  name         TEXT    # resolveInfo.activityInfo.name
+  label        TEXT    # resolveInfo.loadLabel(packageManager)
+  icon         INT     # resolveInfo.getIconResource
+
+The initial table is alphabetical. A BroadcastReceiver listens for app changes;
+new apps are pushed onto the end, deleted apps update all `position' fields.
+
+onCreateView, show the contents of the table ordered by position where visible,
+then kick off a task to load the icons.
+
+Long-press an app to hide it. Add a menu option to show hidden apps and change
+visibility.
+
+Add menu option to show list of apps: select one, then select where in the list
+you'd like the app to appear above. Add blank spot at end of the list so the
+app can appear above it.
+
+
+-
+
+Menu with "About" option.
+
+-
+
+Don't hardcode 88.
+
+
+=
+
+I can probably charge for these:
+
+=
+
+Figure out rotation.
+
+-
+
+Dots to indicate which page you're on.
+
+-
+
+Gesture-based pagination: swipe to top left = first page; bottom left = second
+page; etc.
+
+-
+
+Additional page at end for widgets. One page.
