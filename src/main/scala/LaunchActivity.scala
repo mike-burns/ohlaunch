@@ -34,6 +34,10 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity with As
     super.onCreate(savedInstanceState)
 
     setContentView(R.layout.main)
+  }
+
+  override def onResume {
+    super.onResume
 
     val pager = findView(TR.paginatorizer)
     pager.onGlobalLayout {
