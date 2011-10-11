@@ -11,6 +11,7 @@ import android.support.v4.app.FragmentManager
 import android.support.v4.app.FragmentPagerAdapter
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.Toast
 
 import android.content.pm.ResolveInfo
 import android.widget.TableRow
@@ -40,9 +41,9 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity with As
     super.onResume
 
     val pager = findView(TR.paginatorizer)
-    pager.onGlobalLayout {
-      withPackages(setPagerAdapter(pager)).go
-    }
+    withPackages(setPagerAdapter(pager)).butFirst { () =>
+      Toast.makeText(this, "Loading your apps ...", Toast.LENGTH_LONG).show
+    }.go
   }
 
   override def onConfigurationChanged(c : Configuration) {
