@@ -16,7 +16,8 @@ object General {
     AndroidProject.androidSettings ++
     TypedResources.settings ++
     AndroidMarketPublish.settings ++ Seq (
-      keyalias in Android := "change-me",
+      keyalias in Android := "ohlaunch",
+      proguardInJars in Android ++= ((file("lib") ** "*.jar") get),
       libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
     )
 }
