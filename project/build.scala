@@ -18,7 +18,9 @@ object General {
     AndroidMarketPublish.settings ++ Seq (
       keyalias in Android := "ohlaunch",
       proguardInJars in Android ++= ((file("lib") ** "*.jar") get),
-      libraryDependencies += "org.scalatest" %% "scalatest" % "1.6.1" % "test"
+      libraryDependencies ++= Seq(
+        "org.scalatest" %% "scalatest" % "1.6.1" % "test",
+        "org.positronicnet" %% "positronicnetlib" % "0.3-SNAPSHOT")
     )
 }
 
