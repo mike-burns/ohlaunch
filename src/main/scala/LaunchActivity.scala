@@ -27,7 +27,6 @@ import android.util.Log
 import scala.collection.JavaConversions._
 import TypedResource._
 import GloballyLaidOut._
-import ResolveInfoWithIntent._
 import ViewWithOnClick._
 
 class LaunchActivity extends FragmentActivity with TypedFragmentActivity with AsyncPackages {
@@ -51,7 +50,7 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity with As
     super.onConfigurationChanged(c)
   }
 
-  def setPagerAdapter(pager : ViewPager)(resolveInfos : List[ResolveInfo]) {
+  def setPagerAdapter(pager : ViewPager)(resolveInfos : List[Launcher]) {
     pager.setAdapter(
       new ResolveInfosPagerAdapter(
         getSupportFragmentManager,
@@ -61,7 +60,7 @@ class LaunchActivity extends FragmentActivity with TypedFragmentActivity with As
   }
 }
 
-class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fragmentManager) {
+class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos : List[Launcher], numRows : Int, numCols : Int) extends FragmentPagerAdapter(fragmentManager) {
   override def getCount = {
     (this.resolveInfos.size / (this.numRows * this.numCols).asInstanceOf[Float]).ceil.asInstanceOf[Int]
   }
@@ -72,8 +71,8 @@ class ResolveInfosPagerAdapter(fragmentManager : FragmentManager, resolveInfos :
 }
 
 object AppsFragment {
-  def newInstance(page : Int, resolveInfos : List[ResolveInfo], numRows : Int, numCols : Int) = {
-    val resolveInfosArrayList = new ArrayList[ResolveInfo](resolveInfos.toIterable)
+  def newInstance(page : Int, resolveInfos : List[Launcher], numRows : Int, numCols : Int) = {
+    val resolveInfosArrayList = new ArrayList[Launcher](resolveInfos.toIterable)
 
     val b = new Bundle()
     b.putInt("page", page)
@@ -101,7 +100,7 @@ class AppsFragment extends Fragment with TypedFragment {
   }
 }
 
-class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, numCols : Int, page : Int, resolveInfos : List[ResolveInfo]) {
+class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, numCols : Int, page : Int, resolveInfos : List[Launcher]) {
   def build = {
     val table = new TableLayout(context)
     val packageManager = context.getPackageManager
@@ -121,7 +120,7 @@ class TableBuilder(context : Context, inflater : LayoutInflater, numRows : Int, 
           tv = cell.findView(TR.app_name)
           iv = cell.findView(TR.app_icon)
 
-          tv.setText(resolveInfo.loadLabel(packageManager))
+          tv.setText(resolveInfo.label)
           iv.setImageDrawable(resolveInfo.loadIcon(packageManager))
 
           cell.onClick { view =>
